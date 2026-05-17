@@ -247,20 +247,6 @@
     let fontSize = 2.5;
     let mode = null; // 'prompter' or 'remote'
     let ws = null;
-    let wakeLock = null;
-
-    async function requestWakeLock() {
-      if (!('wakeLock' in navigator)) return;
-      try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', () => { wakeLock = null; });
-      } catch (e) {}
-    }
-
-    async function releaseWakeLock() {
-      if (wakeLock) { await wakeLock.release(); wakeLock = null; }
-    }
-
     // --- WebSocket ---
     let wsReconnectTimer = null;
     let broadcastInterval = null;
@@ -424,10 +410,14 @@
     // --- Auto-Lock Hint (iOS) ---
     function showAutoLockHint() {
       if (localStorage.getItem('tp-autolock-dismissed')) return;
-      if (!/iPhone|iPad/.test(navigator.userAgent)) return;
+      if (!/iPhone|iPad|Android/i.test(navigator.userAgent)) return;
+      const isIOS = /iPhone|iPad/.test(navigator.userAgent);
+      const msg = isIOS
+        ? 'Tipp: Damit der Bildschirm nicht ausgeht &mdash; Einstellungen &gt; Anzeige &gt; Automatische Sperre &gt; <strong style="color:#fff">Nie</strong>'
+        : 'Tipp: Damit der Bildschirm nicht ausgeht &mdash; Einstellungen &gt; Display &gt; Bildschirm-Timeout &gt; <strong style="color:#fff">30 Minuten</strong>';
       const hint = document.createElement('div');
       hint.id = 'autolock-hint';
-      hint.innerHTML = 'Tipp: Damit der Bildschirm nicht ausgeht &mdash; Einstellungen &gt; Anzeige &gt; Automatische Sperre &gt; <strong style="color:#fff">Nie</strong><br><span class="dismiss">Nicht mehr anzeigen</span>';
+      hint.innerHTML = msg + '<br><span class="dismiss">Nicht mehr anzeigen</span>';
       document.body.appendChild(hint);
       hint.querySelector('.dismiss').addEventListener('click', () => {
         localStorage.setItem('tp-autolock-dismissed', '1');
@@ -462,7 +452,6 @@
     // Back
     $('btn-back').addEventListener('click', () => {
       stopScroll();
-      releaseWakeLock();
       mode = null;
       prompter.style.display = 'none';
       modeSelect.style.display = 'flex';
@@ -482,7 +471,6 @@
       $('btn-play').innerHTML = IC_PAUSE;
       lastTime = performance.now();
       animFrame = requestAnimationFrame(scrollStep);
-      requestWakeLock();
     }
 
     function stopScroll() {
@@ -490,7 +478,6 @@
       $('btn-play').innerHTML = IC_PLAY;
       if (animFrame) cancelAnimationFrame(animFrame);
       animFrame = null;
-      releaseWakeLock();
     }
 
     function scrollStep(now) {
@@ -657,9 +644,8 @@
     });
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        if (mode && (!ws || ws.readyState > 1)) connectWS();
-        if (scrolling) requestWakeLock();
+      if (document.visibilityState === 'visible' && mode && (!ws || ws.readyState > 1)) {
+        connectWS();
       }
     });
 
