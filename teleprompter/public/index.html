@@ -132,6 +132,17 @@
       font-size: 1.2rem; background: #222; border-radius: 8px;
     }
     #remote .rc-info { font-size: 0.75rem; color: #555; text-align: center; max-width: 300px; line-height: 1.4; }
+
+    /* Auto-Lock Hint */
+    #autolock-hint {
+      position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%);
+      background: #222; color: #ccc; font-size: 0.85rem; line-height: 1.5;
+      padding: 1rem 1.25rem; border-radius: 10px; max-width: 320px; text-align: center;
+      z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.6); animation: fadeInUp 0.3s ease;
+    }
+    #autolock-hint a { color: #6cf; text-decoration: underline; }
+    #autolock-hint .dismiss { display: inline-block; margin-top: 0.6rem; color: #666; font-size: 0.75rem; cursor: pointer; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
   </style>
 </head>
 <body>
@@ -410,6 +421,21 @@
       });
     }
 
+    // --- Auto-Lock Hint (iOS) ---
+    function showAutoLockHint() {
+      if (localStorage.getItem('tp-autolock-dismissed')) return;
+      if (!/iPhone|iPad/.test(navigator.userAgent)) return;
+      const hint = document.createElement('div');
+      hint.id = 'autolock-hint';
+      hint.innerHTML = 'Tipp: Damit der Bildschirm nicht ausgeht, stelle die <a href="App-prefs:DISPLAY&BRIGHTNESS">Automatische Sperre</a> auf <strong style="color:#fff">Nie</strong>.<br><span class="dismiss">Nicht mehr anzeigen</span>';
+      document.body.appendChild(hint);
+      hint.querySelector('.dismiss').addEventListener('click', () => {
+        localStorage.setItem('tp-autolock-dismissed', '1');
+        hint.remove();
+      });
+      setTimeout(() => { if (hint.parentNode) hint.remove(); }, 10000);
+    }
+
     // --- Prompter ---
     function startPrompter(markdown) {
       mode = 'prompter';
@@ -417,6 +443,7 @@
       textEl.innerHTML = html;
       loader.style.display = 'none';
       prompter.style.display = 'block';
+      showAutoLockHint();
       textEl.scrollTop = 0;
       showToolbar();
       connectWS();
