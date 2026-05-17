@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+artikel-teleprompter-app.md
+teleprompter-stack.yml
+.claude/
