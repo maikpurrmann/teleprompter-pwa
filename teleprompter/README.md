@@ -21,6 +21,7 @@ A lightweight web app that displays Markdown files as scrolling teleprompter tex
 - **Remote Control** -- control the prompter from a second device via WebSocket
 - **Keyboard / Bluetooth remote** -- Space, arrow keys, Page Up/Down
 - **Offline capable** -- works without network after first load (PWA with Service Worker)
+- **Screen wake lock** -- keeps the display on during scrolling (Android/Desktop via Wake Lock API; iOS shows a one-time settings hint)
 
 ## Quick Start
 
@@ -70,6 +71,13 @@ Works in both Prompter and Remote Control mode. Compatible with Bluetooth presen
 - **iPhone:** Open URL in Safari -> Share -> "Add to Home Screen"
 - **Android:** Use the fullscreen button in the toolbar, or install as PWA via browser menu
 - **Desktop:** Fullscreen button in the toolbar
+
+## Screen Auto-Lock
+
+The teleprompter needs the screen to stay on during use.
+
+- **Android / Desktop:** The app uses the [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to automatically keep the display on while scrolling. No action needed.
+- **iPhone / iPad:** The Wake Lock API requires HTTPS, which is not available in a typical LAN setup. On first use, the app shows a hint to set **Settings > Display & Brightness > Auto-Lock > Never**. The hint can be permanently dismissed.
 
 ## Known Issues
 
