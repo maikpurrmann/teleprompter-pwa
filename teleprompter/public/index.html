@@ -427,7 +427,7 @@
       if (!/iPhone|iPad/.test(navigator.userAgent)) return;
       const hint = document.createElement('div');
       hint.id = 'autolock-hint';
-      hint.innerHTML = 'Tipp: Damit der Bildschirm nicht ausgeht, stelle die <a href="App-prefs:DISPLAY&BRIGHTNESS">Automatische Sperre</a> auf <strong style="color:#fff">Nie</strong>.<br><span class="dismiss">Nicht mehr anzeigen</span>';
+      hint.innerHTML = 'Tipp: Damit der Bildschirm nicht ausgeht &mdash; Einstellungen &gt; Anzeige &gt; Automatische Sperre &gt; <strong style="color:#fff">Nie</strong><br><span class="dismiss">Nicht mehr anzeigen</span>';
       document.body.appendChild(hint);
       hint.querySelector('.dismiss').addEventListener('click', () => {
         localStorage.setItem('tp-autolock-dismissed', '1');
