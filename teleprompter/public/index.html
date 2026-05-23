@@ -751,8 +751,16 @@
           displayTextEl.innerHTML = marked.parse(msg.markdown, { breaks: true });
           displayTextEl.scrollTop = 0;
           displayHasText = true;
+          setTimeout(() => {
+            $('display-overlay').classList.remove('visible');
+            document.body.classList.add('cursor-hidden');
+          }, 5000);
           break;
-        case 'play': dStartScroll(); break;
+        case 'play':
+          dStartScroll();
+          $('display-overlay').classList.remove('visible');
+          document.body.classList.add('cursor-hidden');
+          break;
         case 'pause': dStopScroll(); break;
         case 'toggle': if (dScrolling) dStopScroll(); else dStartScroll(); break;
         case 'speed':
