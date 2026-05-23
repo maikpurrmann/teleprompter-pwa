@@ -15,7 +15,8 @@ const MIME = {
 };
 
 const server = http.createServer((req, res) => {
-  let filePath = path.join(PUBLIC, req.url === '/' ? 'index.html' : req.url);
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  let filePath = path.join(PUBLIC, pathname === '/' ? 'index.html' : pathname);
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) {

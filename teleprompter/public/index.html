@@ -143,6 +143,86 @@
     #autolock-hint a { color: #6cf; text-decoration: underline; }
     #autolock-hint .dismiss { display: inline-block; margin-top: 0.6rem; color: #666; font-size: 0.75rem; cursor: pointer; }
     @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    /* Display Screen (external monitor) */
+    #display {
+      display: none; height: 100%; position: relative;
+    }
+    #display-text {
+      height: 100%; overflow-y: auto; padding: 50vh 15vw;
+      font-size: 2.5rem; line-height: 1.6; scroll-behavior: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #display-text.mirrored { transform: scaleY(-1); }
+    #display-text h1 { font-size: 2.5em; margin: 0.5em 0 0.3em; font-weight: 600; }
+    #display-text h2 { font-size: 2em; margin: 0.5em 0 0.3em; font-weight: 500; }
+    #display-text h3 { font-size: 1.5em; margin: 0.4em 0 0.2em; font-weight: 500; }
+    #display-text p { margin: 0.6em 0; }
+    #display-text ul, #display-text ol { margin: 0.5em 0 0.5em 1.5em; }
+    #display-text li { margin: 0.3em 0; }
+    #display-text strong { color: #ffd700; }
+    #display-text em { color: #aef; }
+
+    #display-waiting {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; gap: 2rem;
+    }
+    #display-waiting .msg { font-size: 1.5rem; font-weight: 300; color: #666; }
+
+    #display-overlay {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: flex; justify-content: center; padding: 2rem; z-index: 100;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s;
+    }
+    #display-overlay.visible { opacity: 1; pointer-events: auto; }
+    #display-fs-toggle {
+      padding: 1.5rem 4rem; font-size: 2rem; font-weight: 500;
+      border: 2px solid #555; border-radius: 16px;
+      background: rgba(30,30,30,0.95); color: #fff; cursor: pointer;
+      min-width: 320px; text-align: center;
+      transition: background 0.2s, transform 0.1s;
+    }
+    #display-fs-toggle:hover { background: rgba(60,60,60,0.95); }
+    #display-fs-toggle:active { transform: scale(0.97); }
+
+    .cursor-hidden { cursor: none !important; }
+    .cursor-hidden * { cursor: none !important; }
+
+    /* Controller Panel (shown when Display window is open) */
+    #controller-panel {
+      display: none; height: 100%; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1.5rem; padding: 2rem;
+    }
+    #controller-panel h2 { font-size: 1.3rem; font-weight: 300; letter-spacing: 0.05em; }
+    #controller-panel .cp-status { font-size: 0.85rem; color: #4c4; }
+    #controller-panel .cp-progress-wrap {
+      width: 100%; max-width: 400px; height: 6px; background: #222; border-radius: 3px; overflow: hidden;
+    }
+    #controller-panel .cp-progress-bar { height: 100%; background: rgba(255,255,255,0.5); width: 0; transition: width 0.3s; }
+    #controller-panel .cp-controls {
+      display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; max-width: 400px;
+    }
+    #controller-panel .cp-row { display: flex; align-items: center; gap: 1rem; width: 100%; justify-content: center; }
+    #controller-panel button {
+      border: none; border-radius: 8px; background: #222; color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+    }
+    #controller-panel button:active { background: #444; }
+    #controller-panel button.active { background: #336; }
+    #controller-panel #cp-play {
+      width: 80px; height: 80px; font-size: 2.2rem; border-radius: 50%; background: #333;
+    }
+    #controller-panel .cp-btn { width: 56px; height: 56px; font-size: 1.4rem; }
+    #controller-panel .cp-speed-wrap {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+    }
+    #controller-panel .cp-speed-wrap input[type="range"] { flex: 1; accent-color: #fff; }
+    #controller-panel .cp-speed-wrap .speed-label { font-size: 0.85rem; color: #aaa; min-width: 3em; text-align: center; }
+    #controller-panel .cp-close {
+      margin-top: 1rem; padding: 1rem 2rem; font-size: 1.1rem;
+      background: #633; border-radius: 8px; width: 100%;
+    }
+    #controller-panel .cp-close:hover { background: #844; }
   </style>
 </head>
 <body>
@@ -194,9 +274,35 @@
       <button id="btn-bigger" title="Größer">A+</button>
       <button id="btn-top" title="Zum Anfang">↑</button>
       <button id="btn-fs" title="Vollbild" style="display:none">⛶</button>
+      <button id="btn-display" title="Display öffnen">⧉</button>
     </div>
     <div id="prompter-text"></div>
     <div id="progress"></div>
+    <!-- Controller Panel (shown when Display window is open) -->
+    <div id="controller-panel">
+      <h2>CONTROLLER</h2>
+      <div class="cp-status" id="cp-status">Display verbunden</div>
+      <div class="cp-progress-wrap"><div class="cp-progress-bar" id="cp-progress"></div></div>
+      <div class="cp-controls">
+        <div class="cp-row">
+          <button class="cp-btn" id="cp-up" title="Hoch scrollen">↑</button>
+          <button id="cp-play" title="Play/Pause"><svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em"><polygon points="6,3 20,12 6,21"/></svg></button>
+          <button class="cp-btn" id="cp-down" title="Runter scrollen">↓</button>
+        </div>
+        <div class="cp-speed-wrap">
+          <span class="speed-label">Tempo</span>
+          <input type="range" id="cp-speed" min="0" max="6" value="0" step="1">
+          <span class="speed-label" id="cp-speed-val">30</span>
+        </div>
+        <div class="cp-row">
+          <button class="cp-btn" id="cp-top" title="Zum Anfang">↑↑</button>
+          <button class="cp-btn" id="cp-smaller" title="Kleiner">A−</button>
+          <button class="cp-btn" id="cp-bigger" title="Größer">A+</button>
+          <button class="cp-btn" id="cp-mirror" title="Spiegeln">⟷</button>
+        </div>
+        <button class="cp-close" id="cp-close">Display schließen</button>
+      </div>
+    </div>
   </div>
 
   <!-- Remote Control Screen -->
@@ -226,6 +332,17 @@
     <div class="rc-info">Steuerung per Buttons oder Tastatur:<br>Space = Play/Pause, ↑↓ = Scrollen, ←→ = Tempo</div>
   </div>
 
+  <!-- Display Screen (external monitor, opened via ?mode=display) -->
+  <div id="display">
+    <div id="display-waiting">
+      <div class="msg">Warte auf Prompter...</div>
+    </div>
+    <div id="display-text"></div>
+    <div id="display-overlay">
+      <button id="display-fs-toggle">Vollbild</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     const $ = id => document.getElementById(id);
@@ -238,6 +355,11 @@
     const progress = $('progress');
     const speedSlider = $('speed-slider');
 
+    const displayEl = $('display');
+    const displayTextEl = $('display-text');
+    const displayWaiting = $('display-waiting');
+    const isDisplayMode = new URLSearchParams(location.search).get('mode') === 'display';
+
     let scrolling = false;
     let scrollSpeed = 60;
     let scrollAccum = 0;
@@ -245,8 +367,12 @@
     let lastTime = null;
     let hideTimer = null;
     let fontSize = 2.5;
-    let mode = null; // 'prompter' or 'remote'
+    let mode = null; // 'prompter', 'remote', or 'display'
     let ws = null;
+    let displayWindow = null;
+    let displayPollTimer = null;
+    let currentMarkdown = null;
+
     // --- WebSocket ---
     let wsReconnectTimer = null;
     let broadcastInterval = null;
@@ -286,6 +412,7 @@
         const msg = JSON.parse(e.data);
         if (mode === 'prompter') handlePrompterMessage(msg);
         if (mode === 'remote') handleRemoteMessage(msg);
+        if (mode === 'display') handleDisplayMessage(msg);
       };
     }
 
@@ -343,11 +470,13 @@
       if (mode !== 'prompter') return;
       const max = textEl.scrollHeight - textEl.clientHeight;
       const pct = max > 0 ? (textEl.scrollTop / max) * 100 : 0;
+      const fraction = max > 0 ? textEl.scrollTop / max : 0;
       send({
         type: 'state',
         scrolling: scrolling,
         progress: Math.round(pct * 10) / 10,
         speedIdx: parseInt(speedSlider.value),
+        fraction: fraction,
       });
     }
 
@@ -429,6 +558,7 @@
     // --- Prompter ---
     function startPrompter(markdown) {
       mode = 'prompter';
+      currentMarkdown = markdown;
       const html = marked.parse(markdown, { breaks: true });
       textEl.innerHTML = html;
       loader.style.display = 'none';
@@ -438,6 +568,7 @@
       showToolbar();
       connectWS();
       if (!broadcastInterval) broadcastInterval = setInterval(broadcastState, 500);
+      setTimeout(() => send({ cmd: 'load', markdown: markdown }), 500);
     }
 
     // Toolbar auto-hide
@@ -469,15 +600,21 @@
     function startScroll() {
       scrolling = true;
       $('btn-play').innerHTML = IC_PAUSE;
+      $('cp-play').innerHTML = IC_PAUSE;
+      $('cp-play').classList.add('active');
       lastTime = performance.now();
       animFrame = requestAnimationFrame(scrollStep);
+      send({ cmd: 'play' });
     }
 
     function stopScroll() {
       scrolling = false;
       $('btn-play').innerHTML = IC_PLAY;
+      $('cp-play').innerHTML = IC_PLAY;
+      $('cp-play').classList.remove('active');
       if (animFrame) cancelAnimationFrame(animFrame);
       animFrame = null;
+      send({ cmd: 'pause' });
     }
 
     function scrollStep(now) {
@@ -510,6 +647,7 @@
       const idx = parseInt(speedSlider.value);
       scrollSpeed = speedSteps[idx];
       speedVal.textContent = scrollSpeed;
+      send({ cmd: 'speed', val: idx });
       broadcastState();
     });
 
@@ -517,22 +655,26 @@
     $('btn-mirror').addEventListener('click', () => {
       textEl.classList.toggle('mirrored');
       $('btn-mirror').classList.toggle('active');
+      send({ cmd: 'mirror', active: textEl.classList.contains('mirrored') });
     });
 
     // Font size
     $('btn-bigger').addEventListener('click', () => {
       fontSize = Math.min(6, fontSize + 0.25);
       textEl.style.fontSize = fontSize + 'rem';
+      send({ cmd: 'font', size: fontSize });
     });
     $('btn-smaller').addEventListener('click', () => {
       fontSize = Math.max(1, fontSize - 0.25);
       textEl.style.fontSize = fontSize + 'rem';
+      send({ cmd: 'font', size: fontSize });
     });
 
     // Jump to top
     $('btn-top').addEventListener('click', () => {
       textEl.scrollTop = 0;
       updateProgress();
+      send({ cmd: 'top' });
       broadcastState();
     });
 
@@ -558,6 +700,7 @@
       const max = textEl.scrollHeight - textEl.clientHeight;
       const pct = max > 0 ? (textEl.scrollTop / max) * 100 : 0;
       progress.style.width = pct + '%';
+      $('cp-progress').style.width = pct + '%';
     }
 
     // --- Remote Control ---
@@ -591,6 +734,219 @@
       send({ cmd: 'speed', val: idx });
     });
 
+    // --- Display Mode (own scroll loop, receives commands) ---
+    let dScrolling = false;
+    let dScrollSpeed = 30;
+    let dScrollAccum = 0;
+    let dAnimFrame = null;
+    let dLastTime = null;
+    let dFontSize = 2.5;
+    let displayHasText = false;
+
+    function handleDisplayMessage(msg) {
+      switch (msg.cmd) {
+        case 'load':
+          displayWaiting.style.display = 'none';
+          displayTextEl.style.display = 'block';
+          displayTextEl.innerHTML = marked.parse(msg.markdown, { breaks: true });
+          displayTextEl.scrollTop = 0;
+          displayHasText = true;
+          break;
+        case 'play': dStartScroll(); break;
+        case 'pause': dStopScroll(); break;
+        case 'toggle': if (dScrolling) dStopScroll(); else dStartScroll(); break;
+        case 'speed':
+          dScrollSpeed = speedSteps[msg.val];
+          break;
+        case 'scroll-up': displayTextEl.scrollTop -= 100; break;
+        case 'scroll-down': displayTextEl.scrollTop += 100; break;
+        case 'top': displayTextEl.scrollTop = 0; break;
+        case 'bigger':
+          dFontSize = Math.min(6, dFontSize + 0.25);
+          displayTextEl.style.fontSize = dFontSize + 'rem';
+          break;
+        case 'smaller':
+          dFontSize = Math.max(1, dFontSize - 0.25);
+          displayTextEl.style.fontSize = dFontSize + 'rem';
+          break;
+        case 'font':
+          dFontSize = msg.size;
+          displayTextEl.style.fontSize = dFontSize + 'rem';
+          break;
+        case 'mirror':
+          if (msg.active) displayTextEl.classList.add('mirrored');
+          else displayTextEl.classList.remove('mirrored');
+          break;
+      }
+    }
+
+    function dStartScroll() {
+      dScrolling = true;
+      dLastTime = performance.now();
+      dAnimFrame = requestAnimationFrame(dScrollStep);
+    }
+
+    function dStopScroll() {
+      dScrolling = false;
+      if (dAnimFrame) cancelAnimationFrame(dAnimFrame);
+      dAnimFrame = null;
+    }
+
+    function dScrollStep(now) {
+      if (!dScrolling) return;
+      const dt = (now - dLastTime) / 1000;
+      dLastTime = now;
+      dScrollAccum += dScrollSpeed * dt;
+      if (dScrollAccum >= 1) {
+        const px = Math.floor(dScrollAccum);
+        displayTextEl.scrollTop += px;
+        dScrollAccum -= px;
+      }
+      dAnimFrame = requestAnimationFrame(dScrollStep);
+    }
+
+    function startDisplay() {
+      mode = 'display';
+      modeSelect.style.display = 'none';
+      displayEl.style.display = 'block';
+      displayTextEl.style.display = 'none';
+      connectWS();
+
+      const overlay = $('display-overlay');
+      let cursorTimer = null;
+      overlay.classList.add('visible');
+
+      document.addEventListener('mousemove', () => {
+        document.body.classList.remove('cursor-hidden');
+        overlay.classList.add('visible');
+        clearTimeout(cursorTimer);
+        if (displayHasText) {
+          cursorTimer = setTimeout(() => {
+            document.body.classList.add('cursor-hidden');
+            overlay.classList.remove('visible');
+          }, 3000);
+        }
+      });
+
+      $('display-fs-toggle').addEventListener('click', () => {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } else {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+      });
+
+      const onFsChange = () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        $('display-fs-toggle').textContent = isFs ? 'Vollbild beenden' : 'Vollbild';
+      };
+      document.addEventListener('fullscreenchange', onFsChange);
+      document.addEventListener('webkitfullscreenchange', onFsChange);
+    }
+
+    // "Display öffnen" button in toolbar
+    $('btn-display').addEventListener('click', () => {
+      displayWindow = window.open(
+        location.origin + '?mode=display',
+        'teleprompter-display',
+        'width=960,height=540'
+      );
+      if (currentMarkdown) {
+        setTimeout(() => send({ cmd: 'load', markdown: currentMarkdown }), 1000);
+      }
+      showControllerPanel();
+    });
+
+    // --- Controller Panel (when Display window is open) ---
+    function showControllerPanel() {
+      textEl.style.position = 'absolute';
+      textEl.style.left = '-9999px';
+      textEl.style.width = '100%';
+      toolbar.style.display = 'none';
+      progress.style.display = 'none';
+      $('controller-panel').style.display = 'flex';
+      $('cp-play').innerHTML = scrolling ? IC_PAUSE : IC_PLAY;
+      if (scrolling) $('cp-play').classList.add('active');
+      $('cp-speed').value = speedSlider.value;
+      $('cp-speed-val').textContent = speedSteps[parseInt(speedSlider.value)];
+      if (textEl.classList.contains('mirrored')) $('cp-mirror').classList.add('active');
+      displayPollTimer = setInterval(() => {
+        if (displayWindow && displayWindow.closed) {
+          hideControllerPanel();
+        }
+      }, 500);
+    }
+
+    function hideControllerPanel() {
+      $('controller-panel').style.display = 'none';
+      textEl.style.position = '';
+      textEl.style.left = '';
+      textEl.style.width = '';
+      toolbar.style.display = '';
+      progress.style.display = '';
+      showToolbar();
+      if (displayPollTimer) {
+        clearInterval(displayPollTimer);
+        displayPollTimer = null;
+      }
+      displayWindow = null;
+    }
+
+    $('cp-play').addEventListener('click', () => {
+      if (scrolling) stopScroll(); else startScroll();
+      broadcastState();
+    });
+    $('cp-up').addEventListener('click', () => {
+      textEl.scrollTop -= 100; updateProgress(); broadcastState();
+      send({ cmd: 'scroll-up' });
+    });
+    $('cp-down').addEventListener('click', () => {
+      textEl.scrollTop += 100; updateProgress(); broadcastState();
+      send({ cmd: 'scroll-down' });
+    });
+    $('cp-top').addEventListener('click', () => {
+      textEl.scrollTop = 0; updateProgress(); broadcastState();
+      send({ cmd: 'top' });
+    });
+    $('cp-bigger').addEventListener('click', () => {
+      fontSize = Math.min(6, fontSize + 0.25);
+      textEl.style.fontSize = fontSize + 'rem';
+      send({ cmd: 'font', size: fontSize });
+    });
+    $('cp-smaller').addEventListener('click', () => {
+      fontSize = Math.max(1, fontSize - 0.25);
+      textEl.style.fontSize = fontSize + 'rem';
+      send({ cmd: 'font', size: fontSize });
+    });
+    $('cp-mirror').addEventListener('click', () => {
+      textEl.classList.toggle('mirrored');
+      $('cp-mirror').classList.toggle('active');
+      $('btn-mirror').classList.toggle('active');
+      send({ cmd: 'mirror', active: textEl.classList.contains('mirrored') });
+    });
+    $('cp-speed').addEventListener('input', () => {
+      const idx = parseInt($('cp-speed').value);
+      scrollSpeed = speedSteps[idx];
+      $('cp-speed-val').textContent = scrollSpeed;
+      speedSlider.value = idx;
+      speedVal.textContent = scrollSpeed;
+      send({ cmd: 'speed', val: idx });
+      broadcastState();
+    });
+    $('cp-close').addEventListener('click', () => {
+      if (displayWindow && !displayWindow.closed) displayWindow.close();
+      hideControllerPanel();
+    });
+
+    // Auto-start display mode if URL parameter is set
+    if (isDisplayMode) {
+      document.title = 'Teleprompter Display';
+      startDisplay();
+    }
+
     // --- Keyboard Control (works in both modes) ---
     document.addEventListener('keydown', e => {
       if (mode === 'prompter') {
@@ -603,20 +959,26 @@
           case 'ArrowUp': case 'PageUp':
             e.preventDefault();
             textEl.scrollTop -= 100; updateProgress(); broadcastState();
+            send({ cmd: 'scroll-up' });
             break;
           case 'ArrowDown': case 'PageDown':
             e.preventDefault();
             textEl.scrollTop += 100; updateProgress(); broadcastState();
+            send({ cmd: 'scroll-down' });
             break;
           case 'ArrowRight':
             e.preventDefault();
             { const idx = Math.min(speedSteps.length - 1, parseInt(speedSlider.value) + 1);
-              speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed; broadcastState(); }
+              speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed;
+              $('cp-speed').value = idx; $('cp-speed-val').textContent = scrollSpeed;
+              send({ cmd: 'speed', val: idx }); broadcastState(); }
             break;
           case 'ArrowLeft':
             e.preventDefault();
             { const idx = Math.max(0, parseInt(speedSlider.value) - 1);
-              speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed; broadcastState(); }
+              speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed;
+              $('cp-speed').value = idx; $('cp-speed-val').textContent = scrollSpeed;
+              send({ cmd: 'speed', val: idx }); broadcastState(); }
             break;
         }
       } else if (mode === 'remote') {
