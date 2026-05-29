@@ -14,8 +14,34 @@ const MIME = {
   '.svg': 'image/svg+xml',
 };
 
+function broadcast(msg) {
+  const data = typeof msg === 'string' ? msg : JSON.stringify(msg);
+  for (const client of clients) {
+    if (client.readyState === 1) client.send(data);
+  }
+}
+
 const server = http.createServer((req, res) => {
-  const pathname = new URL(req.url, 'http://localhost').pathname;
+  const parsed = new URL(req.url, 'http://localhost');
+  const pathname = parsed.pathname;
+
+  if (pathname === '/api/command' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const msg = JSON.parse(body);
+        broadcast(msg);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid json' }));
+      }
+    });
+    return;
+  }
+
   let filePath = path.join(PUBLIC, pathname === '/' ? 'index.html' : pathname);
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {

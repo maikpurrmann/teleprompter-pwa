@@ -431,6 +431,20 @@
           scrollSpeed = speedSteps[msg.val];
           speedVal.textContent = scrollSpeed;
           break;
+        case 'speed-up': {
+          const idx = Math.min(speedSteps.length - 1, parseInt(speedSlider.value) + 1);
+          speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed;
+          $('cp-speed').value = idx; $('cp-speed-val').textContent = scrollSpeed;
+          send({ cmd: 'speed', val: idx });
+          break;
+        }
+        case 'speed-down': {
+          const idx = Math.max(0, parseInt(speedSlider.value) - 1);
+          speedSlider.value = idx; scrollSpeed = speedSteps[idx]; speedVal.textContent = scrollSpeed;
+          $('cp-speed').value = idx; $('cp-speed-val').textContent = scrollSpeed;
+          send({ cmd: 'speed', val: idx });
+          break;
+        }
         case 'scroll-up': textEl.scrollTop -= 100; updateProgress(); break;
         case 'scroll-down': textEl.scrollTop += 100; updateProgress(); break;
         case 'top': textEl.scrollTop = 0; updateProgress(); break;
